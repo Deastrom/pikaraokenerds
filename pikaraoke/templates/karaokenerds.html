@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+
+{% block scripts %}
+<script>
+  $(function () {
+    if ($(window).width() <= 500) {
+      $(document).scroll(function () {
+        var y = $(this).scrollTop();
+        if (y > 100) {
+          $("#alpha-bar").removeClass("mobile-hide");
+          $("#alpha-bar").fadeIn();
+        } else {
+          $("#alpha-bar").fadeOut();
+        }
+      });
+    }
+
+    setUserCookie(true);
+    $(".song-added-by").val(getUserCookie());
+
+    var $select = $("#song-to-add").selectize({
+      valueField: "path",
+      labelField: "fileName",
+      searchField: ["fileName"],
+      optgroupField: "type",
+      optgroups: [
+        {
+          value: "autocomplete",
+          label: '{{ _("Available songs in local library") }}',
+        },
+      ],
+      createOnBlur: true,
+      openOnFocus: false,
+      createFilter: function (input) {
+        return input.length >= 2;
+      },
+      onInitialize: function () {
+        var that = this;
+        this.$control.on("click", function () {
+          that.ignoreFocusOpen = true;
+          setTimeout(function () {
+            that.ignoreFocusOpen = false;
+          }, 50);
+        });
+      },
+      onFocus: function () {
+        if ($(window).width() <= 500 && $(window).height() <= 740) {
+          document.getElementById("search-field").scrollIntoView();
+        }
+        if (!this.ignoreFocusOpen) {
+          this.open();
+        }
+      },
+      onBlur: function () {
+        this.setTextboxValue(this.currentResults.query);
+      },
+      onChange: function (id) {
+        if (!id) {
+          $("#add-queue-link").attr("disabled", "true");
+          $("#search-link").attr("disabled", "true");
+          $("#add-queue-link").hide();
+          $("#search-link").show();
+        } else {
+          $("#add-queue-link").removeAttr("disabled");
+          $("#search-link").removeAttr("disabled");
+          $("#add-queue-link").show();
+          $("#search-link").hide();
+        }
+      },
+      onType: function (text) {
+        if (!text) {
+          $("#search-link").attr("disabled", "true");
+          $("#add-queue-link").show();
+          $("#search-link").hide();
+        } else {
+          $("#search-link").removeAttr("disabled");
+          $("#add-queue-link").hide();
+          $("#search-link").show();
+        }
+      },
+      render: {
+        option: function (item, escape) {
+          return (
+            '<div class="row">' +
+            '<div class="col-icon"><i class="icon icon-music has-text-info"></i></div>' +
+            '<div class="col-text">' +
+            escape(item.fileName) +
+            "</div>" +
+            "</div>"
+          );
+        },
+        optgroup_header: function (data, escape) {
+          return (
+            '<div class="optgroup-header">' + escape(data.label) + "</div>"
+          );
+        },
+      },
+      load: function (query, callback) {
+        if (query.length < 2) return callback;
+        $.ajax({
+          url: "{{ url_for('search.autocomplete') }}" + "?q=" + query,
+          type: "get",
+          success: function (data) {
+            callback(data);
+          },
+        });
+      },
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const qSearchString = urlParams.get("search_string");
+    if (qSearchString) {
+      $("#song-to-add-selectized").val(qSearchString);
+      $("#song-to-add-selectized").width("100%");
+    }
+
+    $("#clear-search").on("click", function (e) {
+      e.preventDefault();
+      window.location.href = "{{ url_for('karaokenerds.karaokenerds', search_string='') }}";
+    });
+
+    $("#search-link").on("click", function (e) {
+      e.preventDefault();
+      var search_term = $(".search-selectize .selectize-input input").val();
+      var include_non_karaoke = $("#include-non-karaoke").is(":checked");
+      if (search_term) {
+        $("#searching_loader").removeClass("is-hidden");
+        $("#searching_loader #search_term").text(search_term);
+        $("#search-link").attr("disabled", "true");
+        $("#search_string").val(search_term);
+        $("#non_karaoke").val(include_non_karaoke);
+        $("#container_search_result").hide();
+        $("#container_search_form form").submit();
+      }
+    });
+
+    $("#add-queue-link").on("click", function (e) {
+      e.preventDefault();
+      if ($(".search-selectize").find(":selected").text()) {
+        $("#add-queue-link").attr("disabled", "true");
+        $("#add-queue-link").addClass("is-loading");
+        setTimeout(function () {
+          $("#add-queue-link").removeClass("is-loading");
+        }, 1000);
+        $.ajax({
+          url: "{{ url_for('queue.enqueue') }}",
+          type: "post",
+          data: $("#queue-form").serialize(),
+          success: function (data) {
+            var obj = JSON.parse(data);
+            if (obj.success) {
+              showNotification(
+                "Added song to queue: " + obj.song,
+                "is-success"
+              );
+            } else {
+              showNotification(
+                "Song is already in the queue: " + obj.song,
+                "is-danger"
+              );
+            }
+            $select[0].selectize.clear();
+          },
+        });
+      }
+    });
+
+    $("#search_string").on("input", function () {
+      var searchTerm = $(this).val().toLowerCase();
+      $("table tr").each(function () {
+        var title = $(this).find(".song-title").text().toLowerCase();
+        var artist = $(this).find(".song-artist").text().toLowerCase();
+        var brand = $(this).find(".song-brand").text().toLowerCase();
+        if (title.includes(searchTerm) || artist.includes(searchTerm) || brand.includes(searchTerm)) {
+          $(this).show();
+        } else {
+          $(this).hide();
+        }
+      });
+    });
+
+    $("form.download-form").on("submit", function (e) {
+      e.preventDefault();
+      var form = $(this);
+      $.ajax({
+        url: form.attr("action"),
+        type: form.attr("method"),
+        data: form.serialize(),
+        success: function (data) {
+          var obj = JSON.parse(data);
+          if (obj.success) {
+            showNotification("Added song to queue: " + obj.song, "is-success");
+          } else {
+            showNotification("Song is already in the queue: " + obj.song, "is-danger");
+          }
+        },
+      });
+    });
+
+  });
+</script>
+{% endblock %}
+
+{% block header %}
+<style>
+  #alpha-bar {
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    position: sticky;
+    display: flex;
+    justify-content: space-between;
+    top: 3px;
+    z-index: 20;
+    background-color: #353c3d;
+  }
+
+  #search-field .control .input,
+  #search-field .control .button {
+    height: 100%;
+  }
+
+  #search-field .control .button {
+    background-color: #f1b70e;
+  }
+
+  table {
+    width: 100%;
+    table-layout: auto;
+  }
+
+  td {
+    word-wrap: break-word;
+  }
+
+  .break-word {
+    word-break: break-all;
+  }
+
+  .song-title {
+    font-weight: bold;
+    color: #ecf0f1;
+    /* Light color to stand out against dark background */
+  }
+
+  .song-artist {
+    color: #1abc9c;
+    /* Light green color */
+  }
+
+  .song-brand {
+    color: #9b59b6;
+    /* Light purple color */
+  }
+
+  .active-filter {
+    color: #ffffff;
+    /* White color for active filter */
+  }
+
+  .add-song-link {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+  }
+
+  @media screen and (max-width: 500px) {
+    #alpha-bar {
+      font-size: 13px;
+      position: fixed;
+      display: flex;
+      align-items: center;
+      right: 8px;
+      top: 15px;
+      flex-direction: column;
+      max-width: 22px;
+      height: 95vh;
+    }
+
+    .mobile-hide {
+      visibility: hidden;
+    }
+  }
+</style>
+<h1>{% block title %}
+  {# MSG: Title of the KaraokeNerds page #}
+  {% trans %}Karaoke Nerds{% endtrans %}
+  {% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<p>
+  {% if sort_order == "title" %} <span class="active-filter">{% trans %}Sorted by Title{% endtrans %}</span> |
+  <a href="{{ url_for('karaokenerds.karaokenerds', sort='artist', search_string=search_string or '', letter=letter) }}">
+    {% trans %}Sort by Artist{% endtrans %}
+  </a> |
+  <a href="{{ url_for('karaokenerds.karaokenerds', sort='brand', search_string=search_string or '', letter=letter) }}">
+    {% trans %}Sort by Brand{% endtrans %}
+  </a>
+  {% endif %} {% if sort_order == "artist" %} <span class="active-filter">{% trans %}Sorted by Artist{% endtrans
+    %}</span> |
+  <a href="{{ url_for('karaokenerds.karaokenerds', sort='title', search_string=search_string or '', letter=letter) }}">
+    {% trans %}Sort by Title{% endtrans %}
+  </a> |
+  <a href="{{ url_for('karaokenerds.karaokenerds', sort='brand', search_string=search_string or '', letter=letter) }}">
+    {% trans %}Sort by Brand{% endtrans %}
+  </a>
+  {% endif %} {% if sort_order == "brand" %} <span class="active-filter">{% trans %}Sorted by Brand{% endtrans %}</span>
+  |
+  <a href="{{ url_for('karaokenerds.karaokenerds', sort='title', search_string=search_string or '', letter=letter) }}">
+    {% trans %}Sort by Title{% endtrans %}
+  </a> |
+  <a href="{{ url_for('karaokenerds.karaokenerds', sort='artist', search_string=search_string or '', letter=letter) }}">
+    {% trans %}Sort by Artist{% endtrans %}
+  </a>
+  {% endif %}
+</p>
+
+<div id="alpha-bar" class="has-background-dark mobile-hide">
+  <a href="{{ url_for('karaokenerds.karaokenerds', letter='all', sort=sort_order, search_string=search_string or '') }}"
+    class="{% if letter == 'all' %}active-filter{% endif %}">ALL</a>
+  <a href="{{ url_for('karaokenerds.karaokenerds', letter='numeric', sort=sort_order, search_string=search_string or '') }}"
+    class="{% if letter == 'numeric' %}active-filter{% endif %}">#</a>
+  {% for letter_option in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+  's', 't', 'u', 'v', 'w', 'x', 'y', 'z'] %}
+  <a href="{{ url_for('karaokenerds.karaokenerds', letter=letter_option, sort=sort_order, search_string=search_string or '') }}"
+    class="{% if letter == letter_option %}active-filter{% endif %}">{{letter_option.upper()}}</a>
+  {% endfor %}
+</div>
+
+<div class="field" id="container_queue_form">
+  <form id="queue-form">
+    <div id="search-field" class="field has-addons" style="margin-bottom: 0px">
+      <div class="control" style="width: 100%">
+        <input class="input" type="text" id="search_string" name="search_string" placeholder="Search for songs..."
+          value="{{ search_string or '' }}">
+      </div>
+      <div class="control">
+        <button class="button is-info" type="submit">Search</button>
+      </div>
+    </div>
+    <div style="text-align: right; margin-top: 0px">
+      <a id="clear-search" class="has-text-danger" href="{{ url_for('karaokenerds.karaokenerds', search_string='') }}">Clear
+        search</a>
+    </div>
+  </form>
+</div>
+{{ pagination.links }} {{ pagination.info }}
+<table class="table is-striped">
+  {% for song in songs %}
+  <tr value="{{ song }}">
+    <td id="{{ song.Title[0].lower() }}" style="padding-right: 0px">
+      <form class="download-form" action="{{ url_for('karaokenerds.download') }}" method="post">
+        <input type="hidden" name="song-url" value="{{ song.Watch }}">
+        <input type="hidden" name="song-added-by" class="song-added-by">
+        <input type="hidden" name="song-title" value="{{ song.Title }}">
+        <button class="button add-song-link has-text-weight-bold has-text-success"
+          title="Add '{{ song.Title }}' to queue">
+          <i class="icon icon-list-add"></i>
+        </button>
+      </form>
+    </td>
+    <td class="break-word" style="padding-right: 0; vertical-align: middle;">
+      <div style="word-break: break-word;">
+        <span class="song-title">{{ song.Title }}</span> by <span class="song-artist">{{ song.Artist }}</span> created
+        by <span class="song-brand">{{ song.Brand }}</span>
+      </div>
+    </td>
+    <td style="padding-left: 0px; vertical-align: middle;">
+      <a class="has-text-weight-bold has-text-info" href="{{ song.Watch }}" target="_blank"
+        title="Watch '{{ song.Title }}'">
+        <i class="has-text-success fa-brands fa-youtube"></i>
+      </a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+{{ pagination.links }}
+
+<p style="text-align: center; margin-top: 20px;">
+  <a href="https://karaokenerds.com" target="_blank">Visit KaraokeNerds.com</a>
+</p>
+
+{% endblock %}

@@ -17,6 +17,7 @@
   <link rel="icon" type="image/png" href="{{  url_for('static', filename='images/microphone.png') }}">
   <!-- <link rel="stylesheet" href="{{  url_for('static', filename='fontello/css/fontello.css') }}"> -->
   <link rel="stylesheet" href="/static/fontello/css/fontello.css?cachebust=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
   <script>
 
@@ -210,6 +211,10 @@
           <i class="icon icon-folder-open-empty" title="Browse"></i>
           {# MSG: Navigation link for the page where the user can add existing songs to the queue. #}
           <span>{% trans %}Browse{% endtrans %}</span>
+        </a>
+        <a id="karaokenerds" class="navbar-item" href="{{ url_for('karaokenerds.karaokenerds') }}">
+            <img src="https://karaokenerds.com/Content/Icons/favicon.ico" alt="Karaoke Nerds" title="Karaoke Nerds" style="height: 24px; width: 24px;">
+          <span>{% trans %}Karaoke Nerds{% endtrans %}</span>
         </a>
         <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
           <span aria-hidden="true"></span>

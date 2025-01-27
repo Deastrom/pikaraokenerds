@@ -287,6 +287,14 @@
 <p class="help">{% trans -%}
   You should only need to do this if you manually copied files to the download directory while pikaraoke was running.
   {%- endtrans %}</p>
+<p>{% trans %}Scrape data from Karaokenerds.com Community:{% endtrans %}</p>
+<ul>
+  <li>
+    <a href="{{ url_for('admin.refresh_karaokenerds_songs') }}" ]
+    {# MSG: Text on the link which forces Pikaraoke to rescan and pick up any new songs from KaraokeNerds. #}
+      >{% trans %}Refresh KaraokeNerds songs from Community{% endtrans %}</a>
+  </li>
+</ul>
 
 {# MSG: Text explaining why you might want to update youtube-dl. #}
 <p>{% trans %}If downloads or searches stopped working, updating youtube-dl will probably fix it.

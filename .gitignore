@@ -10,3 +10,7 @@ qrcode.png
 .DS_Store
 *.ini
 docker-compose.yml
+.mise.local.toml
+nohup.out
+pikaraoke/karaokenerds-songs.json
+pikaraoke/karaokenerds-songs.jsonl

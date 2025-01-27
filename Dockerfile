@@ -11,14 +11,12 @@ RUN apt-get update --allow-releaseinfo-change && \
 WORKDIR /app
 
 # Copy minimum required files into the image
-COPY pyproject.toml ./
-COPY docs ./docs
+COPY . /app/
 
 # Only install main dependencies for better docker caching
-RUN poetry install --only main --no-root
+RUN poetry install
 
 # Copy the rest of the files and install the remaining deps in a separate layer
 COPY pikaraoke ./pikaraoke
-RUN poetry install
 
-ENTRYPOINT ["poetry", "run", "pikaraoke", "-d", "/app/pikaraoke-songs/", "--headless"]
+EXPOSE 5555

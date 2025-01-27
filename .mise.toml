@@ -1,0 +1,52 @@
+[tools]
+poetry = "2.1.1"
+python = "3.12"
+
+[env]
+_.python.venv = { path = ".venv", create = true }
+
+[tasks.start]
+run = "poetry run pikaraoke --disable-score --headless --port 8080"
+
+[tasks.docker-build]
+run = "docker build --no-cache -t pikaraokenerds ."
+
+[tasks.docker-start]
+depends = ["docker-build"]
+run = """
+docker run --rm -it \
+  -v $(pwd):/app \
+  -p 8080:8080 \
+  -p 5555:5555 \
+  pikaraokenerds \
+  poetry run pikaraoke --headless
+"""
+
+[tasks.deploy-service]
+run = """
+export POETRY_EXECECUTABLE=$(mise which poetry)
+envsubst < pikaraoke.service.template > pikaraoke.service
+sudo mv pikaraoke.service /etc/systemd/system/ && sudo systemctl daemon-reload
+"""
+
+[tasks.start-service]
+depends = ["deploy-service"]
+run = "sudo systemctl start pikaraoke"
+
+[tasks.stop-service]
+run = "sudo systemctl stop pikaraoke"
+
+[tasks.restart-service]
+run = "sudo systemctl restart pikaraoke"
+
+[tasks.status-service]
+run = "sudo systemctl status pikaraoke"
+
+[tasks.enable-service]
+run = "sudo systemctl enable pikaraoke"
+
+[tasks.disable-service]
+run = "sudo systemctl disable pikaraoke"
+
+[tasks.logs-service]
+run = "journalctl -u pikaraoke -f"

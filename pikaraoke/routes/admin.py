@@ -18,6 +18,7 @@ from flask import (
 
 from pikaraoke.karaoke import Karaoke
 from pikaraoke.lib.current_app import get_admin_password, get_karaoke_instance, is_admin
+from pikaraoke.lib.karaokenerds import scrape
 
 _ = flask_babel.gettext
 
@@ -72,6 +73,19 @@ def refresh():
         # MSG: Message shown after trying to refresh the song list without admin permissions.
         flash(_("You don't have permission to refresh the song list"), "is-danger")
     return redirect(url_for("files.browse"))
+
+
+@admin_bp.route("/refresh_karaokenerds_songs")
+def refresh_karaokenerds_songs():
+    if is_admin():
+        flash(_("Refreshing KaraokeNerds songs..."), "is-warning")
+        scrape()
+        k = get_karaoke_instance()
+        k.load_karaokenerds_songs()  # Reload songs from the JSONL file
+        flash(_("KaraokeNerds songs have been refreshed."), "success")
+    else:
+        flash(_("You don't have permission to refresh KaraokeNerds songs"), "is-danger")
+    return redirect(url_for("karaokenerds.karaokenerds"))
 
 
 @admin_bp.route("/quit")
