@@ -12,5 +12,9 @@
   "[yaml]": {
     "editor.formatOnSave": false
   },
-  "isort.args": ["--profile", "black"]
+  "isort.args": [
+    "--profile",
+    "black"
+  ],
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv"
 }

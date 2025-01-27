@@ -170,7 +170,19 @@ class Karaoke:
         # get songs from download_path
         self.get_available_songs()
 
+        # Load the karaoke nerds songs
+        self.load_karaokenerds_songs()
+
         self.generate_qr_code()
+
+    def load_karaokenerds_songs(self):
+        json_file_path = os.path.join(os.path.dirname(__file__), 'karaokenerds-songs.json')
+        if os.path.exists(json_file_path):
+            with open(json_file_path, 'r') as f:
+                self.karaokenerds_songs = json.load(f)
+        else:
+            self.karaokenerds_songs = {'Items': []}
+        logging.info(f"Loaded {len(self.karaokenerds_songs['Items'])} songs from karaokenerds-songs.json")
 
     def get_url(self):
         if self.is_raspberry_pi:

@@ -1,0 +1,12 @@
+[tools]
+poetry = "latest"
+python = "3.12"
+
+[env]
+_.python.venv = { path = ".venv", create = true }
+
+[tasks.start]
+run = "nohup poetry run pikaraoke --disable-score --headless --port 8080 &"
+
+[tasks.stop]
+run = "if pid=$(lsof -t -i:8080); then kill -15 $pid; rm nohup.out; else echo 'No process running on port 8080'; fi"
