@@ -1,0 +1,14 @@
+[Unit]
+Description=Pikaraoke Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=${MISE_PROJECT_ROOT}
+ExecStart=${POETRY_EXECECUTABLE} run pikaraoke ${PIKARAOKE_OPTIONS}
+Restart=always
+User=bcedar
+Group=bcedar
+
+[Install]
+WantedBy=multi-user.target
