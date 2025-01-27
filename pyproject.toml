@@ -30,6 +30,7 @@ ffmpeg-python = "0.2.0"
 yt-dlp = "*"
 flask-socketio = "^5.5.0"
 gevent = "^24.11.1"
+beautifulsoup4 = "^4.12.3"
 
 [tool.poetry.scripts]
 pikaraoke = "pikaraoke.app:main"
